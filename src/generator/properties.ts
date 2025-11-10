@@ -34,7 +34,7 @@ function getJSONSchemaScalar(
             return 'string'
         case 'Float':
         case 'Decimal':
-            return 'number'
+            return ['number', 'object']
         case 'Json':
             return ['number', 'string', 'boolean', 'object', 'array', 'null']
         case 'Boolean':
@@ -50,7 +50,7 @@ function getJSONSchemaType(field: DMMF.Field): JSONSchema7['type'] {
         isScalarType(field) && !isList
             ? getJSONSchemaScalar(field.type)
             : field.isList
-            ? 'array'
+            ? (['array', 'object'] as JSONSchema7TypeName[])
             : isEnumType(field)
             ? 'string'
             : 'object'
@@ -145,13 +145,14 @@ function isSingleReference(field: DMMF.Field) {
 }
 
 function getEnumListByDMMFType(modelMetaData: ModelMetaData) {
-    return (field: DMMF.Field): string[] | undefined => {
+    return (field: DMMF.Field): (string | null)[] | undefined => {
         const enumItem = modelMetaData.enums.find(
             ({ name }) => name === field.type,
         )
-
+        const { isRequired } = field
         if (!enumItem) return undefined
-        return enumItem.values.map((item) => item.name)
+        const enums = enumItem.values.map((item) => item.name)
+        return isRequired ? enums : [...enums, null]
     }
 }
 
